@@ -37,7 +37,7 @@ private:
   float m_fov = 45.f;        // Field of view, in degrees
   float m_aspectRatio = 1.f; // Ratio between the width and the height of the image
   float m_near = 0.1f; // Distance before which geometry is excluded from the rasterization process
-  float m_far = 10.f; // Distance after which the geometry is excluded from the rasterization process
+  float m_far = 50.f; // Distance after which the geometry is excluded from the rasterization process
 
 };
 

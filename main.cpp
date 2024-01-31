@@ -196,8 +196,8 @@ void initOpenGL() {
     std::exit(EXIT_FAILURE);
   }
 
-  glCullFace(GL_BACK); // Specifies the faces to cull (here the ones pointing away from the camera)
-  glEnable(GL_CULL_FACE); // Enables face culling (based on the orientation defined by the CW/CCW enumeration).
+  //glCullFace(GL_BACK); // Specifies the faces to cull (here the ones pointing away from the camera)
+  //glEnable(GL_CULL_FACE); // Enables face culling (based on the orientation defined by the CW/CCW enumeration).
   glDepthFunc(GL_LESS);   // Specify the depth test for the z-buffer
   glEnable(GL_DEPTH_TEST);      // Enable the z-buffer test in the rasterization
   glClearColor(1.f, 1.f, 1.f, 1.f); // specify the background color, used any time the framebuffer is cleared
@@ -259,7 +259,7 @@ void render(){
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, g_sunTexID);
   glUniform1i(glGetUniformLocation(g_program, "ourTexture"), 2);  // Use texture unit 2
-  g_mesh_sun->render(g_program);
+  //g_mesh_sun->render(g_program);
 
   g_line_test->render(g_program);
 
