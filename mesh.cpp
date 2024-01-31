@@ -224,16 +224,20 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
     glm::vec3 thicknessDirection = glm::normalize(glm::cross(lineDirection,normalVec));
     if (i==1){
       glm::vec3 new_vertex = line[0]-thickness*thicknessDirection;
-      //TODO reinplement the thickness
       lineVertices.push_back(new_vertex.x);
       lineVertices.push_back(new_vertex.y);
       lineVertices.push_back(new_vertex.z);
 
       glm::vec3 new_vertex_plus = line[0]+thickness*thicknessDirection;
-      //TODO: reimplement thickness
       lineVertices.push_back(new_vertex_plus.x);
       lineVertices.push_back(new_vertex_plus.y);
       lineVertices.push_back(new_vertex_plus.z);
+
+      glm::vec3 new_vertex_normal = line[0]+thickness*normal;
+      lineVertices.push_back(new_vertex_plus.x);
+      lineVertices.push_back(new_vertex_plus.y);
+      lineVertices.push_back(new_vertex_plus.z);
+
 
       //calculate the normals
       glm::vec3 normal(new_vertex.x, new_vertex.y, new_vertex.z);
@@ -261,23 +265,29 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
     }
 
     glm::vec3 top_vertex = line[i]-thickness*thicknessDirection;
-    //TODO idem
     lineVertices.push_back(top_vertex.x);
     lineVertices.push_back(top_vertex.y);
     lineVertices.push_back(top_vertex.z);
 
     glm::vec3 bottom_vertex = line[i]+thickness*thicknessDirection;
-    //TODO idem
     lineVertices.push_back(bottom_vertex.x);
     lineVertices.push_back(bottom_vertex.y);
     lineVertices.push_back(bottom_vertex.z);
 
-    //calculate the normals
+    glm::vec3 normal_vertex = line[i]+thickness*normal;
+      lineVertices.push_back(normal_vertex.x);
+      lineVertices.push_back(normal_vertex.y);
+      lineVertices.push_back(normal_vertex.z);
+
+    //calculate the normals - for now this is only a placeholder
       glm::vec3 normal_top(top_vertex.x, top_vertex.y, top_vertex.z);
       normal_top = glm::normalize(normal);
 
       glm::vec3 normal_bottom(bottom_vertex.x, bottom_vertex.y, bottom_vertex.z);
       normal_bottom = glm::normalize(normal);
+
+      glm::vec3 normal_normal(normal_vertex.x, normal_vertex.y, normal_vertex.z);
+      normal_normal = glm::normalize(normal);
  
       lineNormals.push_back(normal_top.x);
       lineNormals.push_back(normal_top.y);
@@ -287,9 +297,17 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
       lineNormals.push_back(normal_bottom.y);
       lineNormals.push_back(normal_bottom.z);
 
+      lineNormals.push_back(normal_normal.x);
+      lineNormals.push_back(normal_normal.y);
+      lineNormals.push_back(normal_normal.z);
+
       //set the colors for each vertex
       lineColors.push_back(0.0f);
       lineColors.push_back(0.0f);
+      lineColors.push_back(1.0f);
+
+      lineColors.push_back(0.0f);
+      lineColors.push_back(0.0f);  
       lineColors.push_back(1.0f);
 
       lineColors.push_back(0.0f);
@@ -299,18 +317,36 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
 
   // Generate indices for triangles
   for (int i = 0; i < line.size()-1 ; i++){
-    int v0 = 2*i;
-    int v1 = 2*i+1;
-    int v2 = 2*i+2;
-    int v3 = 2*i+3;
+    int v0 = 3*i;
+    int v1 = 3*i+1;
+    int v2 = 3*i+2;
+    int v3 = 3*i+3;
+    int v4 = 3*i+4;
+    int v5 = 3*i+5;
 
     lineIndices.push_back(v0);
-    lineIndices.push_back(v2);
     lineIndices.push_back(v1);
+    lineIndices.push_back(v4);
+
+    lineIndices.push_back(v0);
+    lineIndices.push_back(v4);
+    lineIndices.push_back(v3);
+
+    lineIndices.push_back(v0);
+    lineIndices.push_back(v3);
+    lineIndices.push_back(v5);
+
+    lineIndices.push_back(v0);
+    lineIndices.push_back(v5);
+    lineIndices.push_back(v2);
+    
+    lineIndices.push_back(v1);
+    lineIndices.push_back(v5);
+    lineIndices.push_back(v4);
 
     lineIndices.push_back(v1);
     lineIndices.push_back(v2);
-    lineIndices.push_back(v3);
+    lineIndices.push_back(v5);
   }
   //Generate texture coordinates
   for(int i = 0 ; i<lineVertices.size(); i+=3) {
