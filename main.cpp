@@ -131,9 +131,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
           //do not draw an empty line
           shapes.push_back(g_current_shape);
           std::shared_ptr<Mesh> line_Mesh = Mesh::genLine(current_shape_points,g_camera.getPosition());
-          for(glm::vec3 i:current_shape_points){
+          /*for(glm::vec3 i:current_shape_points){
             std::cout<<i.x<<" , "<<i.y<<" , "<<i.z<<"\n";
-          }
+          }*/
           line_Mesh->init();
           shape_meshes.push_back(line_Mesh);
           }

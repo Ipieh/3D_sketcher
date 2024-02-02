@@ -216,7 +216,7 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
   std::vector<float> vertexTexCoords;
   glm::vec3 normal = glm::normalize(normalVec);
 
-  float thickness = 0.5f;
+  float thickness = 0.1f;
 
   for(int i = 1; i < line.size(); i++){
     //plane defined by points in line, and the normal vector
