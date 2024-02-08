@@ -31,16 +31,16 @@ class Mesh {
         ~Mesh();
     private:
         float m_shininess=50.0;
-        std::vector<float> m_vertexPositions{};
+        std::shared_ptr<std::vector<float>> m_vertexPositions=nullptr;
         //contains world positions of the vertices
-        std::vector<float> m_vertexColors{}; 
+        std::shared_ptr<std::vector<float>> m_vertexColors=nullptr; 
         //contains hard coded colors of every vertex
-        std::vector<unsigned int> m_triangleIndices{};
+        std::shared_ptr<std::vector<unsigned int>> m_triangleIndices=nullptr;
         //every 3 elements forms a triangle
         //the int sends back to its position in m_vertexPositions
-        std::vector<float> m_vertexNormals{};
+       std::shared_ptr< std::vector<float>> m_vertexNormals=nullptr;
         //not implemented - not useful in this context
-        std::vector<float> m_vertexTexCoords{};
+        std::shared_ptr<std::vector<float>> m_vertexTexCoords=nullptr;
         //not useful
         glm::mat4 model_matrix = glm::mat4(1.0f);
         
@@ -48,7 +48,7 @@ class Mesh {
 
         void initGPUGeometry(); // sets up the geometry buffer
         void initCPUGeometry();
-        void remesh_isotropic(float L=5.f);
+        void remesh_isotropic(float L=2.f);
         void split_long_edges(float maxL);
         void collapse_short_edges(float minL);
         void compute_normals();
