@@ -45,7 +45,7 @@ std::shared_ptr<Mesh> g_line_test = nullptr;
 std::vector<std::shared_ptr<Shape>> shapes = {};
 std::vector<std::shared_ptr<Mesh>> shape_meshes ={};
 std::vector<glm::vec3> test_line{glm::vec3(1.f,0.f,0.f), glm::vec3(2.f,0.f,0.f),glm::vec3(7.f,0.f,0.f), glm::vec3(9.f,3.f,0.f), glm::vec3(12.f,3.f,0.f)};
-
+std::shared_ptr<Mesh> main_mesh= nullptr;
 // Window parameters
 GLFWwindow *g_window = nullptr;
 
@@ -137,6 +137,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
           line_Mesh->init();
           shape_meshes.push_back(line_Mesh);
           }
+          if (shape_meshes.size()==1){
+            main_mesh = Mesh::genMeshConstraint(g_current_shape);
+            main_mesh->init();
+          }
+          else{
+            //TODO
+            //main_mesh->remesh(shape_meshes);
+          }
 
       }
 }
@@ -144,6 +152,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos){
   if (g_mousePressed){
     g_current_shape->addPoint(xpos,ypos,g_camera);
+
+    if (shape_meshes.size()>1){
+      //TODO
+      //main_mesh->interpolate_new_constraints();
+    }
   }
 }
 
@@ -256,9 +269,9 @@ void render(){
 
 
   // Bind the Sun's texture to texture unit 2
-  glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, g_sunTexID);
-  glUniform1i(glGetUniformLocation(g_program, "ourTexture"), 2);  // Use texture unit 2
+  //glActiveTexture(GL_TEXTURE2);
+  //glBindTexture(GL_TEXTURE_2D, g_sunTexID);
+  //glUniform1i(glGetUniformLocation(g_program, "ourTexture"), 2);  // Use texture unit 2
   //g_mesh_sun->render(g_program);
 
   g_line_test->render(g_program);
@@ -266,7 +279,9 @@ void render(){
   for (int i =0 ; i<shape_meshes.size(); i++){
     shape_meshes[i]->render(g_program);
   };
-
+  if (shape_meshes.size()>0){
+    main_mesh->render(g_program);
+  }
 }
 
 void initCamera() {
@@ -308,6 +323,7 @@ void clear() {
 
 // Update any accessible variable based on the current time
 void update(const float currentTimeInSec) {
+
   glm::mat4 sunModelMatrix = glm::mat4(1.0f);
   sunModelMatrix = glm::translate(sunModelMatrix,glm::vec3(0.0f,0.0f,0.0f));
   //set the distance from center
@@ -321,7 +337,9 @@ void update(const float currentTimeInSec) {
 } 
 
 int main(int argc, char ** argv) {
+  std::cout<<"hello world \n";
   init();
+  std::cout<<"init ok main main \n";
   while(!glfwWindowShouldClose(g_window)) {
     update(static_cast<float>(glfwGetTime()));
     render();

@@ -38,8 +38,10 @@ class Shape{
                 //0.99 is the z depth value in the screen coords first vector.
                 //i did this using thales theorem to scale but have yet to find a direct method to compensate for the projection.
                 }
-            
+            if (glm::length(last_added_point-world_coords)>min_distance){
             points.push_back(world_coords);
+            last_added_point=world_coords;
+            }
         };
 
         void close_shape(){
@@ -48,7 +50,10 @@ class Shape{
         std::vector<glm::vec3> getPoints(){return points;}
 
     private:
+        float min_distance = 0.5f;
+        glm::vec3 last_added_point = glm::vec3(0.f,0.f,0.f);
         std::vector<glm::vec3> points{};
+       // std::vector<glm::vec3> get_curvature(int index_of_point);
 };
 
 #endif
