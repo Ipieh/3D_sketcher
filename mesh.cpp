@@ -726,10 +726,10 @@ void Mesh::split_long_edges(float maxLength){
 
   //initialize the edges
   for (unsigned int i = 0; 3*i < m_triangleIndices->size(); i ++) {
-    unsigned int v0 = (*m_triangleIndices)[3*i];
+    unsigned int v0 = (*m_triangleIndices)[3*i    ];
     unsigned int v1 = (*m_triangleIndices)[3*i + 1];
     unsigned int v2 = (*m_triangleIndices)[3*i + 2];
-
+  
     Edge edge01(v0,v1); 
     Edge edge02(v0,v2); 
     Edge edge12(v2,v1); 
@@ -767,7 +767,7 @@ void Mesh::split_long_edges(float maxLength){
       newVertexPositions.push_back(newPoint.y);
       newVertexPositions.push_back(newPoint.z);
       //we're going to add the vertex to the end of the list
-      newVertexOnEdge[e]=number_of_edges_added+m_triangleIndices->size();
+      newVertexOnEdge[e]=(number_of_edges_added+m_vertexPositions->size()/3);
       //update the counter of added edges
       number_of_edges_added++;
     }
@@ -786,8 +786,9 @@ void Mesh::split_long_edges(float maxLength){
     Edge e3 = Edge(t0,t2);
 
     if (newVertexOnEdge.find(e1)!=newVertexOnEdge.end()){
-  
+      
       int new_vertex = newVertexOnEdge[e1];
+      std::cout<<new_vertex<<std::endl;
       if (newVertexOnEdge.find(e2)!=newVertexOnEdge.end()){
             //if the other edge was subdivided
             int new_vertex_other = newVertexOnEdge[e2];
