@@ -509,15 +509,15 @@ void Mesh::compute_normals(){
     glm::vec3 n_t = glm::normalize(glm::cross(x1 - x0 , x2 - x0));
 
       newNormals[t[0]*3] += n_t.x;
-      newNormals[t[0]*+1] += n_t.y;
+      newNormals[t[0]*3+1] += n_t.y;
       newNormals[t[0]*3+2] += n_t.z;
       
       newNormals[t[1]*3] += n_t.x;
-      newNormals[t[1]*+1] += n_t.y;
+      newNormals[t[1]*3+1] += n_t.y;
       newNormals[t[1]*3+2] += n_t.z;
 
       newNormals[t[2]*3] += n_t.x;
-      newNormals[t[2]*+1] += n_t.y;
+      newNormals[t[2]*3+1] += n_t.y;
       newNormals[t[2]*3+2] += n_t.z;
     }
     std::cout<<" out of normal assignment \n";
@@ -540,16 +540,15 @@ void Mesh::compute_colors(float r, float g, float b){
   std::cout<<"hello good sir \n";
 
   std::vector<float> colorsNew{};
-  std::cout<<"probably the crashing point..\n";
   for (int i = 0 ; i<m_vertexPositions.size(); i+=3){
     colorsNew.push_back(r);
     colorsNew.push_back(g);
     colorsNew.push_back(b);
   }
-  std::cout<<"hello good sir \n";
+  std::cout<<"clearing m_vertexColors\n";
   if (!m_vertexColors.empty()){
   m_vertexColors.clear();}
-  std::cout<<"hello good sir twice \n";
+  std::cout<<"colors cleared \n";
   m_vertexColors = colorsNew;
   std::cout<<"colors assigned \n";
 }
@@ -559,21 +558,22 @@ void Mesh::compute_texCoords(){
   std::cout<<"entered tex Coords \n";
   //Generate texture coordinates
   for(int i = 0 ; i<m_vertexPositions.size(); i+=3) {
-  
+    std::cout<<"entered loop tex coords\n";
     float x = m_vertexPositions[i];
     float y = m_vertexPositions[i+1];
     float z = m_vertexPositions[i+2];
 
     float u = (x + 1.0f) / 2.0f;
     float v = (y + 1.0f) / 2.0f;
-
+    std::cout<<"incrementing temp vertexTexCoords \n";
     vertexTexCoords.push_back(u);
     vertexTexCoords.push_back(v);
   }
-  std::cout<<"entered tex Coords ha \n";
-  /*if (!m_vertexTexCoords.empty()){
+  std::cout<<"clearing vertexTexCoords\n";
+  if (!m_vertexTexCoords.empty()){
     m_vertexTexCoords.clear();
-   }*/
+   }
+   std::cout<<"assigning vertexTexCoords \n";
    m_vertexTexCoords=vertexTexCoords;
 
    std::cout<<"m_vertexTexCoords assigned \n";
