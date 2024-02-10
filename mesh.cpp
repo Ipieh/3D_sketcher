@@ -419,7 +419,7 @@ std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint)
     
   }
   // Generate indices for triangles
-  for (int i = 1; i < constraint_points.size()-1 ; i++){
+  for (int i = 1; i < constraint_points.size()-2 ; i++){
     int v0 = 0;
     int v2 = 2*i;
     int v4 = 2*(i+1);
@@ -445,6 +445,7 @@ std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint)
   mainMesh->compute_colors(0.5f,0.2f,0.7f);
   mainMesh->compute_normals();
   mainMesh->compute_texCoords();
+  
   
   //remesh so that the surface is made of equilateral triangles
   mainMesh->remesh_isotropic();
