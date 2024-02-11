@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <cmath>
 
 //TODO delete stuff that had to do with the solar system
 void Mesh::initCPUGeometry() {
@@ -123,93 +124,6 @@ void Mesh::setModelMatrix(glm::mat4 new_model_matrix)
 {
   model_matrix = new_model_matrix;
 }
-
-std::shared_ptr<Mesh> Mesh::genSphere(const size_t resolution){
-  std::shared_ptr<Mesh> sphereMesh = std::make_shared<Mesh>();
-
-  std::vector<float> sphereVertices;
-  std::vector<unsigned int> sphereIndices;
-  std::vector<float> sphereColors;
-  std::vector<float> sphereNormals;
-  std::vector<float> vertexTexCoords;
-
-  const float radius = 1.0f;
-  const float pi = 3.14159265358979323846264338327950288;
-  const float twoPi = 2.0f * pi;
-  const float deltaPhi = twoPi / resolution;
-  const float deltaTheta = twoPi / resolution;
-  float s,t;
-
-  for (size_t i = 0; i <= resolution; ++i) {
-    float phi = -0.5f * pi + i * deltaPhi;
-    for (size_t j = 0; j <= resolution; ++j) {
-      float theta = j * deltaTheta;
-
-      float x = radius * std::sin(phi) * std::cos(theta);
-      float y = radius * std::sin(phi) * std::sin(theta);
-      float z = radius * std::cos(phi);
-
-      sphereVertices.push_back(x);
-      sphereVertices.push_back(y);
-      sphereVertices.push_back(z);
-
-      //calculate the normals
-      glm::vec3 normal(x, y, z);
-      normal = glm::normalize(normal);
-
-      sphereNormals.push_back(normal.x);
-      sphereNormals.push_back(normal.y);
-      sphereNormals.push_back(normal.z);
-
-      //set the colors for each vertex
-      sphereColors.push_back(0.25f);  // Red component
-      sphereColors.push_back(0.75f);  // Green component
-      sphereColors.push_back(1.0f); // Blue component
-    }
-  }
-
-  // Generate indices for triangles
-  for (size_t i = 0; i < resolution; ++i) {
-    for (size_t j = 0; j < resolution; ++j) {
-      // Compute indices for the four vertices of a quad
-      unsigned int v0 = i * (resolution + 1) + j;
-      unsigned int v1 = v0 + 1;
-      unsigned int v2 = v0 + resolution + 1;
-      unsigned int v3 = v2 + 1;
-    
-      // Create two triangles from the quad
-      sphereIndices.push_back(v0);
-      sphereIndices.push_back(v2);
-      sphereIndices.push_back(v1);
-
-      sphereIndices.push_back(v1);
-      sphereIndices.push_back(v2);
-      sphereIndices.push_back(v3);
-
-    }
-  }
-
-  for(int i = 0 ; i<sphereVertices.size(); i+=3) {
-    float x = sphereVertices[i];
-    float y = sphereVertices[i+1];
-    float z = sphereVertices[i+2];
-
-    float u = 0.5f + atan2(z,x)/(2*M_PI);
-    float v = 0.5f - asin(y)/M_PI;
-
-    vertexTexCoords.push_back(u);
-    vertexTexCoords.push_back(v);
-  }
-
-  sphereMesh->setVertexPositions(sphereVertices);
-  sphereMesh->setTriangleIndices(sphereIndices);
-  sphereMesh->setColors(sphereColors);
-  sphereMesh ->setNormals(sphereNormals);
-  sphereMesh-> setVertexTexCoords(vertexTexCoords);
-  GLuint m_texCoordVbo = 0;
-
-    return sphereMesh;
-}; 
 
 std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 normalVec){
   std::shared_ptr<Mesh> lineMesh = std::make_shared<Mesh>();
@@ -390,7 +304,7 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
   return lineMesh;
 }
 
-std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint){
+std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint, Camera camera){
   
   //TODO maybe should generate only half at first to see if it works
   std::vector<glm::vec3>constraint_points = constraint->getPoints(); 
@@ -407,10 +321,11 @@ std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint)
 
   for(int i = 1; i < constraint_points.size(); i++){
     glm::vec3 constraint_point_i = constraint_points[i];
-    //put every point in twice, once for each side of the plane
-    meshVertices.push_back(constraint_point_i.x);
-    meshVertices.push_back(constraint_point_i.y);
-    meshVertices.push_back(constraint_point_i.z);
+    //put every point in twice, once for each side of the plane, with slight offset
+    glm::vec3 constraint_point_top = constraint_points[i];
+    meshVertices.push_back(constraint_point_top.x);
+    meshVertices.push_back(constraint_point_top.y);
+    meshVertices.push_back(constraint_point_top.z);
     //even points on top
     meshVertices.push_back(constraint_point_i.x);
     meshVertices.push_back(constraint_point_i.y);
@@ -464,13 +379,13 @@ void Mesh::remesh_isotropic(float L){
   float maxLength = 5/3*L;
   float minLength = 4/5*L;
 
-  for (int i =0 ; i<1; i++){
+  for (int i =0 ; i<3; i++){
     split_long_edges(maxLength);
     std::cout<<"split long edges ok \n";
     std::cout<<"m_vertexPositions size "<<m_vertexPositions->size()<<"\n";
-    //collapse_short_edges(minLength);
-    std::cout<<"collapse short edges ok \n";
   }
+  //collapse_short_edges(minLength);
+  //std::cout<<"collapse short edges ok \n";
   compute_normals();
   compute_colors(0.45f,0.59f,0.70f);
   compute_texCoords();
@@ -504,34 +419,24 @@ void Mesh::compute_normals(){
                              (*m_vertexPositions)[t[2]*3+2]);
 
     glm::vec3 n_t = glm::normalize(glm::cross(x1 - x0 , x2 - x0));
-      if ((t[0]*3+2) >newNormals.size()){
-        std::cout<<t[0]<<"seg fault "<<newNormals.size()<<"\n";
-      }
+
       newNormals[t[0]*3  ] += n_t.x;
       newNormals[t[0]*3+1] += n_t.y;
       newNormals[t[0]*3+2] += n_t.z;
 
-      if ((t[1]*3+2) >newNormals.size()){
-        std::cout<<"seg fault \n";
-        std::cout<<t[1]<<"seg fault "<<newNormals.size()<<"\n";
-      }
       newNormals[t[1]*3  ] += n_t.x;
       newNormals[t[1]*3+1] += n_t.y;
       newNormals[t[1]*3+2] += n_t.z;
 
-      if ((t[2]*3+2) >newNormals.size()){
-        std::cout<<"seg fault \n";
-        std::cout<<t[2]<<"seg fault "<<newNormals.size()<<"\n";
-      }
       newNormals[t[2]*3  ] += n_t.x;
       newNormals[t[2]*3+1] += n_t.y;
       newNormals[t[2]*3+2] += n_t.z;
     }
     std::cout<<" out of normal assignment \n";
     for (unsigned int nIt = 0; nIt < newNormals.size(); nIt+=3) {
-      glm::vec3 n_t = glm::vec3(newNormals[nIt],
-                              newNormals[nIt+1],
-                              newNormals[nIt+2]);
+      glm::vec3 n_t = glm::vec3(newNormals[nIt  ],
+                                newNormals[nIt+1],
+                                newNormals[nIt+2]);
       
       glm::normalize(n_t);
       newNormals[nIt] = n_t.x;
@@ -644,9 +549,14 @@ void Mesh::collapse_short_edges(float minLength){
     if (length < minLength) {
       // Collapse Edge
       a = 0.5f * (a+b);
+      //make the points overlap in the middle
       (*m_vertexPositions)[3*e.a  ]=a.x;
       (*m_vertexPositions)[3*e.a+1]=a.y;
       (*m_vertexPositions)[3*e.a+2]=a.z;
+
+      (*m_vertexPositions)[3*e.b  ]=a.x;
+      (*m_vertexPositions)[3*e.b+1]=a.y;
+      (*m_vertexPositions)[3*e.b+2]=a.z;
       //mark the vertex to delete
       verticesToDelete.insert(e.b);
       //mark the triangles to be deleted:
@@ -701,7 +611,6 @@ void Mesh::collapse_short_edges(float minLength){
   setVertexPositions(finalVertices);
   setTriangleIndices(finalTriangles);
 }
-
 void Mesh::split_long_edges(float maxLength){
   //will first run through all the edges (triangle per triangle)
   //if the edges are too long they will be split in half and this will be memorized
@@ -879,3 +788,154 @@ Mesh::~Mesh(){
   glDeleteBuffers(1,&m_texCoordVbo);
   
 }
+/*float calculate_gaussian_curvature(std::vector<unsigned int> triangle_index_list, unsigned int point){
+  float kg=2*3.1415;
+  float mixed_barycentric_area =0;
+  sum_angles = 0;
+  for (unsigned int t : triangle_index_list){
+    mixed_barycentric_area+= (1/3)*area(t);
+    sum_angles+=angle(t, point);
+   }
+   kg-=sum_angles;
+   kg = kg / mixed_barycentric_area;
+   return kg;
+}*/
+float Mesh::area(unsigned int triangle){
+  unsigned int v0 = (*m_triangleIndices)[triangle*3  ];
+  unsigned int v1 = (*m_triangleIndices)[triangle*3+1];
+  unsigned int v2 = (*m_triangleIndices)[triangle*3+2];
+
+  glm::vec3 v0_vec((*m_vertexPositions)[3*v0  ],
+                   (*m_vertexPositions)[3*v0+1],
+                   (*m_vertexPositions)[3*v0+2]);
+  glm::vec3 v1_vec((*m_vertexPositions)[3*v1  ],
+                   (*m_vertexPositions)[3*v1+1],
+                   (*m_vertexPositions)[3*v1+2]);
+  glm::vec3 v2_vec((*m_vertexPositions)[3*v2  ],
+                   (*m_vertexPositions)[3*v2+1],
+                   (*m_vertexPositions)[3*v2+2]);
+  
+  float a = glm::length(v0_vec -v1_vec);
+  float b = glm::length (v1_vec - v2_vec);
+  float c = glm::length(v2_vec-v0_vec);
+  float s = (a+b+c)/2.f;
+  float area = std::sqrt(s*(s-a)*(s-b)*(s-c));
+  return area;  
+}
+float Mesh::angle(unsigned int triangle, unsigned int point){
+  unsigned int v0 = (*m_triangleIndices)[triangle*3  ];
+  unsigned int v1 = (*m_triangleIndices)[triangle*3+1];
+  unsigned int v2 = (*m_triangleIndices)[triangle*3+2];
+  unsigned int a;
+  unsigned int b;
+  unsigned int c;
+  if (v0 == point){
+    a=v0;
+    b=v1;
+    c=v2;
+  }
+  else if (v1==point){
+    a=v1;
+    b=v2;
+    c=v0;
+  }
+  else if (v2 == point){
+    a=v2;
+    b=v1;
+    c=v0;
+  }
+  glm::vec3 x((*m_vertexPositions)[3*a  ],
+              (*m_vertexPositions)[3*a+1],
+              (*m_vertexPositions)[3*a+2]);
+  glm::vec3 y((*m_vertexPositions)[3*b  ],
+              (*m_vertexPositions)[3*b+1],
+              (*m_vertexPositions)[3*b+2]);
+  glm::vec3 z((*m_vertexPositions)[3*c  ],
+              (*m_vertexPositions)[3*c+1],
+              (*m_vertexPositions)[3*c+2]);
+  float final_angle= std::acos(glm::dot(glm::normalize(y-x),glm::normalize(z-x)));
+  return final_angle;
+}
+glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_index_list, unsigned int point){
+  struct Edge {
+    unsigned int a , b;
+    Edge( unsigned int c , unsigned int d ) : a( std::min<unsigned int>(c,d) ) , b( std::max<unsigned int>(c,d) ) {}
+    bool operator < ( Edge const & o ) const {   return a < o.a  ||  (a == o.a && b < o.b);  }
+    bool operator == ( Edge const & o ) const {   return a == o.a  &&  b == o.b;  }
+    };
+
+  glm::vec3 temp_vec(0.f);
+  float mixed_barycentric_area = 0.f;
+  std::set<Edge> edgesSet{};
+  //contains all the edges
+  std::map< Edge , std::set< unsigned int > > trianglesOnEdge; 
+  // finds the triangles on the edges
+  glm::vec3 point_laplacian(0.f);
+  //initialize the edges
+  for (unsigned int triangle_index : triangle_index_list) {
+    unsigned int v0 = (*m_triangleIndices)[3*triangle_index    ];
+    unsigned int v1 = (*m_triangleIndices)[3*triangle_index + 1];
+    unsigned int v2 = (*m_triangleIndices)[3*triangle_index + 2];
+  
+    Edge edge01(v0,v1); 
+    Edge edge02(v0,v2); 
+    Edge edge12(v2,v1); 
+    //memorize edges
+    edgesSet.insert(edge01);
+    edgesSet.insert(edge02);
+    edgesSet.insert(edge12);
+    //memorize which triangles touch them
+    trianglesOnEdge[edge01].insert(triangle_index);
+    trianglesOnEdge[edge02].insert(triangle_index);
+    trianglesOnEdge[edge12].insert(triangle_index);
+    //calculate barycentric area
+    mixed_barycentric_area+=(1/3)*area(triangle_index);
+    }
+  for (Edge e : edgesSet){
+    std::set<unsigned int> triangles = trianglesOnEdge[e];
+    glm::vec3 p1;
+    glm::vec3 p2;
+    unsigned int a; //center vertex
+    unsigned int b;
+    unsigned int c;
+
+    if(point == e.a){
+      unsigned int a = e.a;
+      unsigned int b = e.b;
+    }
+    else{
+      unsigned int a = e.b;
+      unsigned int b =e.a;
+    }
+    p1 = glm::vec3 ((*m_vertexPositions)[3*a  ],
+                    (*m_vertexPositions)[3*a+1],
+                    (*m_vertexPositions)[3*a+2]);
+    p2 = glm::vec3 ((*m_vertexPositions)[3*b  ],
+                    (*m_vertexPositions)[3*b+1],
+                    (*m_vertexPositions)[3*b+2]);
+
+    for (unsigned int triangle : triangles){
+      //find opposite angle
+      unsigned int alpha = (*m_triangleIndices)[3*triangle  ];
+      unsigned int beta = (*m_triangleIndices)[3*triangle+1];
+      unsigned int gamma = (*m_triangleIndices)[3*triangle+2];
+
+      if ((alpha == a && beta ==b) || (beta == a && alpha == b)){
+        c = gamma;
+      }
+      if ((alpha == a && gamma ==b)||(gamma == a && alpha == b)){
+        c = beta;
+      }
+
+      if ((beta == a && gamma == b)||(gamma == a && beta ==b)){
+        c= alpha;
+      }
+
+      float angle_opposite = angle(triangle, c);
+      temp_vec+=(p2-p1)/(std::tan(angle_opposite));
+    }
+  }
+  temp_vec = temp_vec/(2*mixed_barycentric_area);
+  return temp_vec;
+}
+//glm::vec3 Mesh::compute_mean_curvature_normal()

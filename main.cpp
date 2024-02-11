@@ -31,16 +31,15 @@
 #include "stb_image.h"
 
 // constants
-const static float kSizeSun = 2;
+
 bool g_mousePressed = false;
 std::shared_ptr<Shape> g_current_shape = nullptr;
 
 // Model transformation matrices
-glm::mat4  g_sun, g_line;
+glm::mat4 g_line;
 
 
 //mesh
-std::shared_ptr<Mesh> g_mesh_sun = nullptr;
 std::shared_ptr<Mesh> g_line_test = nullptr;
 std::vector<std::shared_ptr<Shape>> shapes = {};
 std::vector<std::shared_ptr<Mesh>> shape_meshes ={};
@@ -51,8 +50,7 @@ GLFWwindow *g_window = nullptr;
 
 // GPU objects
 GLuint g_program = 0; // A GPU program contains at least a vertex shader and a fragment shader
-//texture ids
-GLuint g_sunTexID;
+
 
 Camera g_camera;
 
@@ -88,7 +86,7 @@ GLuint loadTextureFromFileToGPU(const std::string &filename) {
 
 // Executed each time the window is resized. Adjust the aspect ratio and the rendering viewport to the current window.
 void windowSizeCallback(GLFWwindow* window, int width, int height) {
-  g_camera.setAspectRatio(static_cast<float>(width)/static_cast<float>(height));
+  g_camera.setAspectRatio(width,height);
   glViewport(0, 0, (GLint)width, (GLint)height); // Dimension of the rendering region in the window
 }
 void scrollCallBack(GLFWwindow *window, double xoffset, double yoffset){
@@ -123,6 +121,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
       }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
         g_mousePressed=false;
+        std::cout<<"g_current_shape size :"<<g_current_shape->getPoints().size()<<" \n";
         if ((g_current_shape->getPoints()).size()>1){
           g_current_shape -> close_shape();
           std::cout<<"mouse released \n";
@@ -138,7 +137,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
           shape_meshes.push_back(line_Mesh);
           }
           if (shape_meshes.size()==1){
-            main_mesh = Mesh::genMeshConstraint(g_current_shape);
+            main_mesh = Mesh::genMeshConstraint(g_current_shape, g_camera);
             main_mesh->init();
           }
           else{
@@ -152,7 +151,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos){
   if (g_mousePressed){
     g_current_shape->addPoint(xpos,ypos,g_camera);
-
+    
     if (shape_meshes.size()>1){
       //TODO
       //main_mesh->interpolate_new_constraints();
@@ -248,8 +247,6 @@ void initGPUprogram() {
   loadShader(g_program, GL_FRAGMENT_SHADER, "fragmentShader.glsl");
 
   glLinkProgram(g_program); // The main GPU program is ready to be handle streams of polygons
-  
-  g_sunTexID = loadTextureFromFileToGPU("media/sun.jpg");
 
   glUseProgram(g_program);
 
@@ -268,12 +265,6 @@ void render(){
   glUniformMatrix4fv(glGetUniformLocation(g_program, "projMat"), 1, GL_FALSE, glm::value_ptr(projMatrix)); // compute the projection matrix of the camera and pass it to the GPU program
 
 
-  // Bind the Sun's texture to texture unit 2
-  //glActiveTexture(GL_TEXTURE2);
-  //glBindTexture(GL_TEXTURE_2D, g_sunTexID);
-  //glUniform1i(glGetUniformLocation(g_program, "ourTexture"), 2);  // Use texture unit 2
-  //g_mesh_sun->render(g_program);
-
   g_line_test->render(g_program);
 
   for (int i =0 ; i<shape_meshes.size(); i++){
@@ -287,7 +278,7 @@ void render(){
 void initCamera() {
   int width, height;
   glfwGetWindowSize(g_window, &width, &height);
-  g_camera.setAspectRatio(static_cast<float>(width)/static_cast<float>(height));
+  g_camera.setAspectRatio(width,height);
 
   g_camera.setPosition(glm::vec3(0.0, 0.0, 40.0));
   g_camera.setNear(0.1);
@@ -303,13 +294,9 @@ void init() {
   initGPUprogram();
   initCamera();
 
-  g_mesh_sun = Mesh::genSphere();
   g_line_test = Mesh::genLine(test_line,g_camera.getPosition());
   g_line_test ->setModelMatrix(glm::mat4(1.0f));
 
-  g_mesh_sun->isSun();
-
-  g_mesh_sun->init();
   g_line_test->init();
 }
 
@@ -323,15 +310,6 @@ void clear() {
 
 // Update any accessible variable based on the current time
 void update(const float currentTimeInSec) {
-
-  glm::mat4 sunModelMatrix = glm::mat4(1.0f);
-  sunModelMatrix = glm::translate(sunModelMatrix,glm::vec3(0.0f,0.0f,0.0f));
-  //set the distance from center
-  sunModelMatrix = glm::scale(sunModelMatrix, glm::vec3(kSizeSun,kSizeSun,kSizeSun));
-  //scale the size of the sun
-  sunModelMatrix=glm::rotate(sunModelMatrix,currentTimeInSec/10,glm::vec3(0.0,1.0,0.0));
-  //sun rotates on itself
-  g_mesh_sun->setModelMatrix(sunModelMatrix);
 
 
 } 

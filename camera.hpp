@@ -13,7 +13,8 @@ public:
   inline float getFov() const { return m_fov; }
   inline void setFoV(const float f) { m_fov = f; }
   inline float getAspectRatio() const { return m_aspectRatio; }
-  inline void setAspectRatio(const float a) { m_aspectRatio = a; }
+  inline void setAspectRatio(const int width, const int height) { m_aspectRatio =(static_cast<float> (height))/(static_cast<float>(width)) ;
+                                                            m_height = height; m_width = width; }
   inline float getNear() const { return m_near; }
   inline void setNear(const float n) { m_near = n; }
   inline float getFar() const { return m_far; }
@@ -31,6 +32,8 @@ public:
   inline glm::mat4 computeProjectionMatrix() const {
     return glm::perspective(glm::radians(m_fov), m_aspectRatio, m_near, m_far);
   }
+  int m_height;
+  int m_width;
 
 private:
   glm::vec3 m_pos = glm::vec3(0, 0, 0);
@@ -38,7 +41,6 @@ private:
   float m_aspectRatio = 1.f; // Ratio between the width and the height of the image
   float m_near = 0.1f; // Distance before which geometry is excluded from the rasterization process
   float m_far = 50.f; // Distance after which the geometry is excluded from the rasterization process
-
 };
 
 #endif

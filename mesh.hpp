@@ -14,7 +14,7 @@ class Mesh {
         void render(GLuint g_program); // should be called in the main rendering loop
         static std::shared_ptr<Mesh> genSphere(const size_t resolution=16); // should generate a unit sphere // ...
         static std::shared_ptr<Mesh> genLine(std::vector<glm::vec3> line,glm::vec3 normalVec);
-        static std::shared_ptr<Mesh> genMeshConstraint(std::shared_ptr<Shape> first_shape);
+        static std::shared_ptr<Mesh> genMeshConstraint(std::shared_ptr<Shape> first_shape, Camera camera);
         //static float thicknessLine;
         void setVertexPositions(std::vector<float> vertexPositions);
         void setTriangleIndices(std::vector<unsigned int> triangleIndices);
@@ -31,6 +31,7 @@ class Mesh {
         ~Mesh();
     private:
         float m_shininess=50.0;
+        unsigned int m_offset = 2;
         std::shared_ptr<std::vector<float>> m_vertexPositions=nullptr;
         //contains world positions of the vertices
         std::shared_ptr<std::vector<float>> m_vertexColors=nullptr; 
@@ -54,6 +55,11 @@ class Mesh {
         void compute_normals();
         void compute_colors(float r, float g, float b);
         void compute_texCoords();
+
+        float area(unsigned int triangle); //calculates the area of a given triangle
+        float angle(unsigned int triangle, unsigned int point); //calculate the angle of a triangle's corner
+        glm::vec3 calculate_laplacian_curve(std::vector<unsigned int> triangle_index_list, 
+                                  unsigned int point); // calculated the main cuurvature vertex
         
         GLuint m_texCoordVbo = 0;
         GLuint m_vao = 0;

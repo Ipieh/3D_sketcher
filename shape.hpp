@@ -13,7 +13,7 @@ class Shape{
     public:
         void addPoint(double x, double y, Camera camera, bool setToZeroPlane = true){
             //calculate world position of vertex
-
+            std::cout<<x<< " , "<< y<<"\n";
             glm::vec4 screenCoords(x/512-1.f,1.f-y/384,0.99f,1.f);
             glm::mat4 proj = camera.computeProjectionMatrix();
             glm::mat4 view = camera.computeViewMatrix();
