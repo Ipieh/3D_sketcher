@@ -13,8 +13,8 @@ class Shape{
     public:
         void addPoint(double x, double y, Camera camera, bool setToZeroPlane = true){
             //calculate world position of vertex
-            std::cout<<x<< " , "<< y<<"\n";
-            glm::vec4 screenCoords(x/512-1.f,1.f-y/384,0.99f,1.f);
+            screen_points_coords.push_back(glm::vec2(x,y));
+            glm::vec4 screenCoords(2*x/camera.m_width-1.f,1.f-2*y/camera.m_height,0.99f,1.f);
             glm::mat4 proj = camera.computeProjectionMatrix();
             glm::mat4 view = camera.computeViewMatrix();
             glm::mat4 proj_inv=glm::inverse(proj);
@@ -48,11 +48,26 @@ class Shape{
             points.push_back(glm::vec3(points[0].x,points[0].y,points[0].z));
         }
         std::vector<glm::vec3> getPoints(){return points;}
-
+        std::vector<glm::vec2> get_screen_points_coords(){return screen_points_coords;};
+        std::vector<glm::vec3> compute_bounding_circle(){
+            glm::vec3 center(0.0);
+            glm::vec3 radius(0.0);
+            for (glm::vec3 p : points){
+                center+=p;
+            }
+            center = (1.0f/points.size())*center; 
+            for (glm::vec3 point : points){
+                if (glm::length(point-center)>glm::length(radius)){
+                    radius = point-center;
+                }
+            }
+            return std::vector<glm::vec3>{center,radius};
+        }
     private:
         float min_distance = 0.5f;
         glm::vec3 last_added_point = glm::vec3(0.f,0.f,0.f);
         std::vector<glm::vec3> points{};
+        std::vector<glm::vec2> screen_points_coords{};
        // std::vector<glm::vec3> get_curvature(int index_of_point);
 };
 

@@ -121,7 +121,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
       }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
         g_mousePressed=false;
-        std::cout<<"g_current_shape size :"<<g_current_shape->getPoints().size()<<" \n";
         if ((g_current_shape->getPoints()).size()>1){
           g_current_shape -> close_shape();
           std::cout<<"mouse released \n";
@@ -151,7 +150,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos){
   if (g_mousePressed){
     g_current_shape->addPoint(xpos,ypos,g_camera);
-    
+
     if (shape_meshes.size()>1){
       //TODO
       //main_mesh->interpolate_new_constraints();
@@ -315,7 +314,6 @@ void update(const float currentTimeInSec) {
 } 
 
 int main(int argc, char ** argv) {
-  std::cout<<"hello world \n";
   init();
   std::cout<<"init ok main main \n";
   while(!glfwWindowShouldClose(g_window)) {

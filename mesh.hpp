@@ -43,6 +43,7 @@ class Mesh {
         //not implemented - not useful in this context
         std::shared_ptr<std::vector<float>> m_vertexTexCoords=nullptr;
         //not useful
+        std::vector<float> m_vertexNormalCurvatures{};
         glm::mat4 model_matrix = glm::mat4(1.0f);
         
         bool isSourceOfLight = 0;
@@ -55,7 +56,10 @@ class Mesh {
         void compute_normals();
         void compute_colors(float r, float g, float b);
         void compute_texCoords();
-
+        void compute_all_curvatures();
+        void use_isometricGrid(Shape shape);
+        //calculates an isometric grid equilateral triangles from the shape
+        //and assigns the mesh to it.
         float area(unsigned int triangle); //calculates the area of a given triangle
         float angle(unsigned int triangle, unsigned int point); //calculate the angle of a triangle's corner
         glm::vec3 calculate_laplacian_curve(std::vector<unsigned int> triangle_index_list, 

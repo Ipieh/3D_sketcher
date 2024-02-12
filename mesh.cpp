@@ -4,7 +4,8 @@
 #include <map>
 #include <set>
 #include <cmath>
-
+#include "isometricGrid.hpp"
+#include "vertex.hpp"
 //TODO delete stuff that had to do with the solar system
 void Mesh::initCPUGeometry() {
   //done in the generate certain shapes
@@ -305,7 +306,7 @@ std::shared_ptr<Mesh> Mesh::genLine(std::vector<glm::vec3> line, glm::vec3 norma
 }
 
 std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint, Camera camera){
-  
+  //TODO use the grid , simpler
   //TODO maybe should generate only half at first to see if it works
   std::vector<glm::vec3>constraint_points = constraint->getPoints(); 
 
@@ -363,13 +364,13 @@ std::shared_ptr<Mesh> Mesh::genMeshConstraint(std::shared_ptr<Shape> constraint,
   
   
   //remesh so that the surface is made of equilateral triangles
-  mainMesh->remesh_isotropic();
-
+  //mainMesh->remesh_isotropic();
+  mainMesh->use_isometricGrid((*constraint));
   std::cout<<"number of points in  colors"<<(mainMesh->m_vertexColors->size()/3)<<"\n";
   std::cout<<"number of points in positions"<<(mainMesh->m_vertexPositions->size()/3)<<"\n";
   std::cout<<"number of points in normals"<<(mainMesh->m_vertexNormals->size()/3)<<"\n";
   std::cout<<"number of points in texturecoords"<<(mainMesh->m_vertexTexCoords->size()/2)<<"\n";
-  
+  mainMesh->compute_all_curvatures();
   return mainMesh;
 
 } 
@@ -448,8 +449,6 @@ void Mesh::compute_normals(){
     setNormals(newNormals);
 }
 void Mesh::compute_colors(float r, float g, float b){
-  std::cout<<"hello good sir \n";
-
   std::vector<float> colorsNew{};
   for (int i = 0 ; i<m_vertexPositions->size(); i+=3){
     colorsNew.push_back(r);
@@ -458,7 +457,6 @@ void Mesh::compute_colors(float r, float g, float b){
   }
 
   setColors(colorsNew);
-  std::cout<<"colors assigned \n";
 }
 void Mesh::compute_texCoords(){
 
@@ -487,13 +485,6 @@ void Mesh::collapse_short_edges(float minLength){
   //if the edges are too long they will be split in half and this will be memorized
   //once all the edges have been visited, we will retrace the triangles
   //if an edge has been split, its triangles will now make two more triangles each
-
-  struct Edge {
-    unsigned int a , b;
-    Edge( unsigned int c , unsigned int d ) : a( std::min<unsigned int>(c,d) ) , b( std::max<unsigned int>(c,d) ) {}
-    bool operator < ( Edge const & o ) const {   return a < o.a  ||  (a == o.a && b < o.b);  }
-    bool operator == ( Edge const & o ) const {   return a == o.a  &&  b == o.b;  }
-    };
 
   std::set<unsigned int> verticesToDelete;
   std::set<unsigned int> trianglesToDelete;
@@ -616,13 +607,6 @@ void Mesh::split_long_edges(float maxLength){
   //if the edges are too long they will be split in half and this will be memorized
   //once all the edges have been visited, we will retrace the triangles
   //if an edge has been split, its triangles will now make two more triangles each
-
-  struct Edge {
-    unsigned int a , b;
-    Edge( unsigned int c , unsigned int d ) : a( std::min<unsigned int>(c,d) ) , b( std::max<unsigned int>(c,d) ) {}
-    bool operator < ( Edge const & o ) const {   return a < o.a  ||  (a == o.a && b < o.b);  }
-    bool operator == ( Edge const & o ) const {   return a == o.a  &&  b == o.b;  }
-    };
 
   std::vector<float> newVertexPositions{};
   std::vector<unsigned int> newTriangles{};
@@ -801,6 +785,7 @@ Mesh::~Mesh(){
    return kg;
 }*/
 float Mesh::area(unsigned int triangle){
+
   unsigned int v0 = (*m_triangleIndices)[triangle*3  ];
   unsigned int v1 = (*m_triangleIndices)[triangle*3+1];
   unsigned int v2 = (*m_triangleIndices)[triangle*3+2];
@@ -857,15 +842,9 @@ float Mesh::angle(unsigned int triangle, unsigned int point){
   return final_angle;
 }
 glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_index_list, unsigned int point){
-  struct Edge {
-    unsigned int a , b;
-    Edge( unsigned int c , unsigned int d ) : a( std::min<unsigned int>(c,d) ) , b( std::max<unsigned int>(c,d) ) {}
-    bool operator < ( Edge const & o ) const {   return a < o.a  ||  (a == o.a && b < o.b);  }
-    bool operator == ( Edge const & o ) const {   return a == o.a  &&  b == o.b;  }
-    };
 
   glm::vec3 temp_vec(0.f);
-  float mixed_barycentric_area = 0.f;
+  float mixed_barycentric_area = 0.0000001f;
   std::set<Edge> edgesSet{};
   //contains all the edges
   std::map< Edge , std::set< unsigned int > > trianglesOnEdge; 
@@ -876,7 +855,7 @@ glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_ind
     unsigned int v0 = (*m_triangleIndices)[3*triangle_index    ];
     unsigned int v1 = (*m_triangleIndices)[3*triangle_index + 1];
     unsigned int v2 = (*m_triangleIndices)[3*triangle_index + 2];
-  
+
     Edge edge01(v0,v1); 
     Edge edge02(v0,v2); 
     Edge edge12(v2,v1); 
@@ -890,8 +869,12 @@ glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_ind
     trianglesOnEdge[edge12].insert(triangle_index);
     //calculate barycentric area
     mixed_barycentric_area+=(1/3)*area(triangle_index);
+    std::cout<<"mixed area "<<mixed_barycentric_area<<"\n";
+    std::cout<<"area "<<area(triangle_index)<<"\n";    
     }
+
   for (Edge e : edgesSet){
+
     std::set<unsigned int> triangles = trianglesOnEdge[e];
     glm::vec3 p1;
     glm::vec3 p2;
@@ -900,16 +883,18 @@ glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_ind
     unsigned int c;
 
     if(point == e.a){
-      unsigned int a = e.a;
-      unsigned int b = e.b;
+       a = e.a;
+       b = e.b;
     }
     else{
-      unsigned int a = e.b;
-      unsigned int b =e.a;
+      a = e.b;
+      b =e.a;
     }
     p1 = glm::vec3 ((*m_vertexPositions)[3*a  ],
                     (*m_vertexPositions)[3*a+1],
                     (*m_vertexPositions)[3*a+2]);
+
+
     p2 = glm::vec3 ((*m_vertexPositions)[3*b  ],
                     (*m_vertexPositions)[3*b+1],
                     (*m_vertexPositions)[3*b+2]);
@@ -919,7 +904,7 @@ glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_ind
       unsigned int alpha = (*m_triangleIndices)[3*triangle  ];
       unsigned int beta = (*m_triangleIndices)[3*triangle+1];
       unsigned int gamma = (*m_triangleIndices)[3*triangle+2];
-
+ 
       if ((alpha == a && beta ==b) || (beta == a && alpha == b)){
         c = gamma;
       }
@@ -933,9 +918,49 @@ glm::vec3 Mesh::calculate_laplacian_curve(std::vector<unsigned int> triangle_ind
 
       float angle_opposite = angle(triangle, c);
       temp_vec+=(p2-p1)/(std::tan(angle_opposite));
+
     }
+
   }
+
   temp_vec = temp_vec/(2*mixed_barycentric_area);
+  std::cout<<"temp_Vec "<<temp_vec.x<<"\n";
   return temp_vec;
 }
-//glm::vec3 Mesh::compute_mean_curvature_normal()
+
+void Mesh::use_isometricGrid(Shape shape){
+  IsometricGrid grid = IsometricGrid(shape);
+  setTriangleIndices(grid.getTriangles());
+  setVertexPositions(grid.getPointPositions());
+  compute_colors(0.2f,1.f,0.5f);
+  compute_normals();
+  compute_texCoords();
+}
+void Mesh::compute_all_curvatures(){
+  m_vertexNormalCurvatures.clear();
+  //init the list of triangles containing a specific point
+  std::map<unsigned int,std::set<unsigned int>> triangles_for_vertex{};
+  for (unsigned int triangle = 0 ; 3*triangle<m_triangleIndices->size(); triangle++){
+    unsigned int a = (*m_triangleIndices)[3*triangle  ];
+    unsigned int b = (*m_triangleIndices)[3*triangle+1];
+    unsigned int c = (*m_triangleIndices)[3*triangle+2];
+
+    triangles_for_vertex[a].insert(triangle);
+    triangles_for_vertex[b].insert(triangle);
+    triangles_for_vertex[c].insert(triangle);
+  }
+  std::cout<<"parcours de triangle ok compute_all_curvatures \n";
+  for (unsigned int point =0 ; 3*point<m_vertexPositions->size(); point++){
+    std::vector<unsigned int> triangles{};
+    for (unsigned int triangle : triangles_for_vertex[point]){
+      triangles.push_back(triangle);
+    }
+    glm::vec3 curvature_Vec_laplacian = (-1.f)* calculate_laplacian_curve(triangles,point);
+    m_vertexNormalCurvatures.push_back(curvature_Vec_laplacian.x);
+    m_vertexNormalCurvatures.push_back(curvature_Vec_laplacian.y);
+    m_vertexNormalCurvatures.push_back(curvature_Vec_laplacian.z);
+    std::cout<< curvature_Vec_laplacian.x <<", "<< curvature_Vec_laplacian.x <<", "
+              << curvature_Vec_laplacian.x <<"\n";
+  }
+  std::cout<<(m_vertexNormalCurvatures.size() == m_vertexPositions->size())<<"\n";
+}

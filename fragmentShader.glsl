@@ -19,7 +19,7 @@ void main() {
 		
 		vec3 lightColor = vec3(1.0);
 		vec3 n = normalize(fNormal);
-		vec3 lightDirection = -normalize(fPosition); 
+		vec3 lightDirection = -normalize(vec3(1,1,0)); 
 		//light direction vector 
 
 		vec3 viewVector = normalize(camPos-fPosition);
